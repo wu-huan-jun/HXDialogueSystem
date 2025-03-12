@@ -24,6 +24,9 @@ DialogueSystem.cs中记载了一个方法
 
 如果你想要打包游戏而不是做一个在Editor玩的demo，目前的办法是读取xlsx后在PlayMode下复制DialogueSystem的Component，退出PlayMode，然后Paste Component Value回DialogueSystem上。
 
+## 示例项目中的资产？
+示例剧情中使用的对话是我正在做的旮旯game，因为女主现在只有建模没有立绘，所以为了美观性（？）我拿建模凹了几个pose喂给了Sd，就有了示例对话里的人物图片。
+
 ## 反馈和建议
 如果你是上科大的同学，可以直接来创艺E511线下丹砂我。
 
