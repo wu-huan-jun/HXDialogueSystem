@@ -76,13 +76,14 @@ public class DialogueSystemUI : MyUI
 
     private void Start()
     {
+        nameText.text = "";
+        sentenceText.text = "";
         group = GetComponent<CanvasGroup>();
         if (group == null)
             group = this.gameObject.AddComponent<CanvasGroup>();
         group.alpha = 0;
         FadeIn(group, .8f);
 
-        sentenceText.text = "";
         continueButton.onClick.AddListener(OnContinueButtonClick);
         // StartCoroutine(LateStart());
 
