@@ -134,11 +134,13 @@ public class Content
     //                                若单选，这个列表就只有一个元素。
     //                                若多选，这个列表有≥一个元素
     public List<int> nextContentIndex = new List<int>(0);//为-1则结束对话
-    public List<string> command;
+    public List<string> commands;
+    public List<AudioClip> clips = new List<AudioClip>();
 
     public Content()
     {
         selective = false;
+        clips = null;
         //其他初始化
     }
 }
@@ -193,17 +195,6 @@ public class DialogueSystem : MonoBehaviour
 
     void Start()
     {
-        // Dictionary<string, string> keys = new Dictionary<string, string>();
-        // keys["0"] = "path1";
-        // keys["1"] = "path2";
-        // string json = JsonConvert.SerializeObject(keys);
-        // Debug.Log(json);
-        // Dictionary<string, string> keys1 = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
-        // Debug.Log(keys1.Values);
-        // foreach (KeyValuePair<string, string> kvp in keys1)
-        // {
-        //     Debug.Log($"Key = {kvp.Key}, Value = {kvp.Value}");
-        // }
     }
     public void Save()
     {
@@ -470,9 +461,34 @@ public class DialogueSystem : MonoBehaviour
                 Debug.Log($"因为缺失NextContentIndex,跳过第{i + 1}行的读取");
                 continue;
             }
+
+            //读取AudioClip
+            p = headerRowNameToIndexDictionary["AudioClipPaths"];
+            if (currRow.GetCell(p) != null && currRow.GetCell(p).ToString() != "")
+            {
+                cellString = currRow.GetCell(p).ToString();
+                string[] paths = cellString.Split("|");
+                AudioClip[] a = new AudioClip[paths.Length];
+                List<AudioClip> adcList = a.ToList<AudioClip>();
+                for (int j = 0; j < paths.Length; j++)
+                {
+                    path = paths[j];
+                    if (path.Substring(0, 5) == "[adc]")
+                        path = "AudioClips/" + path.Remove(0, 5);
+                    Debug.Log($"试图从{path}读取音轨");
+                    AudioClip audioClip = Resources.Load<AudioClip>(path);
+                    if (audioClip != null)
+                    {
+                        adcList[j] = audioClip;
+                        Debug.Log("……成功！");
+                    }
+                    else
+                        Debug.LogError($"AudioClip {path} 未找到！");
+                }
+                content.clips = adcList;
+            }
             dialogue.AddContent(content);
         }
-
         fs_read.Close();
         return dialogue;
     }

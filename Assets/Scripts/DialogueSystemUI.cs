@@ -52,6 +52,7 @@ public class DialogueSystemUI : MyUI
 
     [Header("DialogueSystem 默认UI组件")]
     public Dialogue liveDialogue;
+    public bool showingIenmRunning;
     [SerializeField] private Content content;
     [SerializeField] private CanvasGroup group;
     [SerializeField] private Text sentenceText;
@@ -59,6 +60,7 @@ public class DialogueSystemUI : MyUI
     [SerializeField] private Text nameText;
     [SerializeField] private Button continueButton;
     [SerializeField] private bool showReplyInSentenceBox;//是否在选择选择肢后，在语句框里复述选项中的文字
+    [SerializeField] private AudioSource audioSource;
     private bool isShowingSelectedReply;
     private int lastSelectedButtonIndex;
     [SerializeField] private CanvasGroup replyBox;//回复框
@@ -71,6 +73,7 @@ public class DialogueSystemUI : MyUI
     [SerializeField] private bool globalSearchFloatingImgName = false;
     //[SerializeField] private SerializedDictionary<string, Image> floatingImgs = new SerializedDictionary<string, Image>();
 
+
     private void Start()
     {
         group = GetComponent<CanvasGroup>();
@@ -79,6 +82,7 @@ public class DialogueSystemUI : MyUI
         group.alpha = 0;
         FadeIn(group, .8f);
 
+        sentenceText.text = "";
         continueButton.onClick.AddListener(OnContinueButtonClick);
         // StartCoroutine(LateStart());
 
@@ -95,7 +99,7 @@ public class DialogueSystemUI : MyUI
         ///</summary>
         liveDialogue = Dialogue;
         Content content = liveDialogue.GetLiveContent();
-        ShowContent(content);
+        StartCoroutine(ShowContent(content));
     }
     public void OnSelectionButtonClick(int buttonIndex)
     {
@@ -109,6 +113,15 @@ public class DialogueSystemUI : MyUI
         {
             FadeOut(replyBox, .3f);
             StartCoroutine(WriteSentenceText(sentenceText, content.contentSentence[buttonIndex]));
+
+            if (audioSource != null)
+            {
+                if (content.clips[buttonIndex] != null)
+                {
+                    audioSource.clip = content.clips[buttonIndex];
+                    audioSource.Play();
+                }
+            }
             lastSelectedButtonIndex = buttonIndex;
             isShowingSelectedReply = true;
         }
@@ -156,22 +169,23 @@ public class DialogueSystemUI : MyUI
             Debug.LogError("在liveDialogue.contents中找不到contentIndex为" + targetContentIndex + "的Content");
             return;
         }
-        ShowContent(content);
+        StartCoroutine(ShowContent(content));
         //将新的Content替换到UI上
     }
-    void ShowContent(Content content)
+    IEnumerator ShowContent(Content content)
     {
         ///<summary>
         ///将Content中的文本和图片填入UI中
         ///</summary>
+        showingIenmRunning = true;
         Debug.Log($"正在展示content{content.contentIndex},contentSelective:{content.selective}");
 
-
+        audioSource.Pause();
+        yield return null;
         //非选项部分
-        nameText.text = content.speaker;
         if (content.backGroundSprite != null)//读取并替换背景图
         {
-            StartCoroutine(ReplaceImg(backgroundImage, content.backGroundSprite, backgroundImgFadeDuration));
+            yield return StartCoroutine(ReplaceImg(backgroundImage, content.backGroundSprite, backgroundImgFadeDuration));
         }
 
         if (content.namedSprites != null && content.namedSprites.namedSprites != null)//读取并替换浮动图
@@ -184,7 +198,7 @@ public class DialogueSystemUI : MyUI
                 if (floatingimg != null)
                 {
                     // floatingimg.sprite = namedSprite.sprite;
-                    StartCoroutine(ReplaceImg(floatingimg, namedSprite.sprite, .3f));
+                    yield return StartCoroutine(ReplaceImg(floatingimg, namedSprite.sprite, .3f));
                     Debug.Log("……成功在NamedImages中找到了对应对象！");
                 }
                 else if (globalSearchFloatingImgName)
@@ -198,7 +212,7 @@ public class DialogueSystemUI : MyUI
                         {
                             image = imgObject.AddComponent<Image>();
                         }
-                        StartCoroutine(ReplaceImg(image, namedSprite.sprite, .3f));
+                        yield return StartCoroutine(ReplaceImg(image, namedSprite.sprite, .3f));
                         // image.sprite = namedSprite.sprite;
                         Debug.Log("……成功！");
                     }
@@ -214,12 +228,23 @@ public class DialogueSystemUI : MyUI
             }
         }
 
+        nameText.text = content.speaker;//替换说话人姓名
 
         //选项部分
         if (!content.selective)
         {
             // sentenceText.text = content.contentSentence[0];
             sentence = content.contentSentence[0];
+
+            if (audioSource != null)
+            {
+                audioSource.Pause();
+                if (content.clips!=null && content.clips[0] != null)
+                {
+                    audioSource.clip = content.clips[0];
+                    audioSource.Play();
+                }
+            }
             StartCoroutine(WriteSentenceText(sentenceText, sentence));
             FadeOut(replyBox, 0.3f);
         }
@@ -248,6 +273,7 @@ public class DialogueSystemUI : MyUI
             sentence = "……";
             StartCoroutine(WriteSentenceText(sentenceText, sentence));
         }
+        showingIenmRunning = false;
         OnDispalyContent(content);
     }
 
